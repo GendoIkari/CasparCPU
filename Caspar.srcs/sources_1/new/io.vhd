@@ -51,10 +51,8 @@ BEGIN
 
     port00WriteEnabled <= '0';
     port01WriteEnabled <= '0';
-    port02WriteEnabled <= WriteEnabled WHEN port02Enabled = '1' ELSE
-        '0';
-    port03WriteEnabled <= WriteEnabled WHEN port03Enabled = '1' ELSE
-        '0';
+    port02WriteEnabled <= WriteEnabled AND port02Enabled;
+    port03WriteEnabled <= WriteEnabled AND port03Enabled;
 
     port02Reg : Register8Bit PORT MAP(Clock, '1', port02WriteEnabled, DataIn, port02);
     port03Reg : Register8Bit PORT MAP(Clock, '1', port03WriteEnabled, DataIn, port03);
@@ -66,5 +64,6 @@ BEGIN
         Port01In WHEN port01Enabled = '1' AND WriteEnabled = '0' ELSE
         port02 WHEN port02Enabled = '1' AND WriteEnabled = '0' ELSE
         port03 WHEN port03Enabled = '1' AND WriteEnabled = '0' ELSE
+        x"00" WHEN Enabled = '1'AND WriteEnabled = '0' ELSE
         "ZZZZZZZZ";
 END Rtl;
