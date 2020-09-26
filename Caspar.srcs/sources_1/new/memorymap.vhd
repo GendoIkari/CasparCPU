@@ -10,38 +10,34 @@ ENTITY MemoryMap IS
         Address : IN std_logic_vector(15 DOWNTO 0);
         DataIn : IN std_logic_vector(7 DOWNTO 0);
         DataOut : OUT std_logic_vector(7 DOWNTO 0);
-        PC : IN std_logic_vector(15 DOWNTO 0);
+        PC : IN std_logic_vector(13 DOWNTO 0);
         OpCode : OUT std_logic_vector(7 DOWNTO 0);
-        OpCodeData : OUT std_logic_vector(15 DOWNTO 0)
+        OCRegA : OUT std_logic_vector(3 DOWNTO 0);
+        OCRegB : OUT std_logic_vector(3 DOWNTO 0);
+        OCData : OUT std_logic_vector(15 DOWNTO 0);
+
+        Port00In : IN std_logic_vector(7 DOWNTO 0);
+        Port01In : IN std_logic_vector(7 DOWNTO 0);
+        Port02Out : OUT std_logic_vector(7 DOWNTO 0);
+        Port03Out : OUT std_logic_vector(7 DOWNTO 0)
     );
 END MemoryMap;
 
 ARCHITECTURE Rtl OF MemoryMap IS
-    COMPONENT CustomRom4K
+    COMPONENT Ram64K IS
         PORT (
-            Clock : IN std_logic;
-            Enabled : IN std_logic;
-            WriteEnabled : IN std_logic;
-            Address : IN std_logic_vector(15 DOWNTO 0);
-            DataIn : IN std_logic_vector(7 DOWNTO 0);
-            DataOut : OUT std_logic_vector(7 DOWNTO 0);
-            PC : IN std_logic_vector(15 DOWNTO 0);
-            OpCode : OUT std_logic_vector(7 DOWNTO 0);
-            OpCodeData : OUT std_logic_vector(15 DOWNTO 0)
-        );
-    END COMPONENT;
-
-    COMPONENT CustomRam4K
-        PORT (
-            Clock : IN std_logic;
-            Enabled : IN std_logic;
-            WriteEnabled : IN std_logic;
-            Address : IN std_logic_vector(15 DOWNTO 0);
-            DataIn : IN std_logic_vector(7 DOWNTO 0);
-            DataOut : OUT std_logic_vector(7 DOWNTO 0);
-            PC : IN std_logic_vector(15 DOWNTO 0);
-            OpCode : OUT std_logic_vector(7 DOWNTO 0);
-            OpCodeData : OUT std_logic_vector(15 DOWNTO 0)
+            ClkA : IN STD_LOGIC;
+            EnA : IN STD_LOGIC;
+            WEA : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+            AddrA : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            DInA : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+            DOutA : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+            ClkB : IN STD_LOGIC;
+            EnB : IN STD_LOGIC;
+            WEB : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+            AddrB : IN STD_LOGIC_VECTOR(13 DOWNTO 0);
+            DInB : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            DOutB : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
         );
     END COMPONENT;
 
@@ -52,65 +48,46 @@ ARCHITECTURE Rtl OF MemoryMap IS
             WriteEnabled : IN std_logic;
             Address : IN std_logic_vector(7 DOWNTO 0);
             DataIn : IN std_logic_vector(7 DOWNTO 0);
-            DataOut : OUT std_logic_vector(7 DOWNTO 0)
+            DataOut : OUT std_logic_vector(7 DOWNTO 0);
+            Port00In : IN std_logic_vector(7 DOWNTO 0);
+            Port01In : IN std_logic_vector(7 DOWNTO 0);
+            Port02Out : OUT std_logic_vector(7 DOWNTO 0);
+            Port03Out : OUT std_logic_vector(7 DOWNTO 0)
         );
     END COMPONENT;
 
-    SIGNAL romEnabled : std_logic;
     SIGNAL ramEnabled : std_logic;
     SIGNAL ioEnabled : std_logic;
-    SIGNAL romOpCode : std_logic_vector(7 DOWNTO 0);
-    SIGNAL romOpCodeData : std_logic_vector(15 DOWNTO 0);
-    SIGNAL ramAddress : std_logic_vector(15 DOWNTO 0);
-    SIGNAL ramPC : std_logic_vector(15 DOWNTO 0);
-    SIGNAL ramOpCode : std_logic_vector(7 DOWNTO 0);
-    SIGNAL ramOpCodeData : std_logic_vector(15 DOWNTO 0);
     SIGNAL ioAddress : std_logic_vector(7 DOWNTO 0);
+    SIGNAL ramDataOut : std_logic_vector(7 DOWNTO 0);
+    SIGNAL ioDataOut : std_logic_vector(7 DOWNTO 0);
 BEGIN
-    ramAddress <= std_logic_vector(to_unsigned(to_integer(unsigned(Address)) - 4096, ramAddress'length));
-    ramPC <= std_logic_vector(to_unsigned(to_integer(unsigned(PC)) - 4096, ramPC'length));
-
-    ioAddress(7) <= Address(7);
-    ioAddress(6) <= Address(6);
-    ioAddress(5) <= Address(5);
-    ioAddress(4) <= Address(4);
-    ioAddress(3) <= Address(3);
-    ioAddress(2) <= Address(2);
-    ioAddress(1) <= Address(1);
-    ioAddress(0) <= Address(0);
-
-    romEnabled <= (NOT Address(15)) AND (NOT Address(14)) AND (NOT Address(13)) AND (NOT Address(12));
     ioEnabled <= Address(15) AND Address(14) AND Address(13) AND Address(12) AND Address(11) AND Address(10) AND Address(9) AND Address(8);
-    ramEnabled <= NOT romEnabled AND NOT ioEnabled;
+    ioAddress <= Address(7 DOWNTO 0);
+    ramEnabled <= NOT ioEnabled;
+    DataOut <=
+        ramDataOut WHEN ramEnabled = '1' AND Enabled = '1' ELSE
+        ioDataOut WHEN ioEnabled = '1' AND Enabled = '1' ELSE
+        "ZZZZZZZZ";
 
-    OpCode <= ramOpCode WHEN ramEnabled = '1' ELSE
-        romOpCode;
-    OpCodeData <= romOpCode WHEN ramEnabled = '1' ELSE
-        romOpCodeData;
-
-    -- 0x0000 => 0x0FFF = ROM 4K
-    rom : CustomRom4K PORT MAP(
-        Clock => Clock,
-        Enabled => romEnabled,
-        WriteEnabled => WriteEnabled,
-        Address => Address,
-        DataIn => DataIn,
-        DataOut => DataOut,
-        PC => PC,
-        OpCode => romOpCode,
-        OpCodeData => romOpCodeData
-    );
-    -- 0x1000 => 0xFEFF = RAM ~60K
-    ram : CustomRam4K PORT MAP(
-        Clock => Clock,
-        Enabled => ramEnabled,
-        WriteEnabled => WriteEnabled,
-        Address => ramAddress,
-        DataIn => DataIn,
-        DataOut => DataOut,
-        PC => PC,
-        OpCode => ramOpCode,
-        OpCodeData => ramOpCodeData
+    -- -- 0x0000 => 0xFEFF = ROM ~64K
+    ram : Ram64K PORT MAP(
+        ClkA => Clock,
+        EnA => ramEnabled,
+        WEA(0) => WriteEnabled,
+        AddrA => Address,
+        DInA => DataIn,
+        DOutA => ramDataOut,
+        ClkB => Clock,
+        EnB => '1',
+        WEB => "0",
+        AddrB => PC,
+        DInB => x"00000000",
+        DOutB(7 DOWNTO 0) => OpCode,
+        DOutB(11 DOWNTO 8) => OCRegA,
+        DOutB(15 DOWNTO 12) => OCRegB,
+        DOutB(23 DOWNTO 16) => OCData(7 DOWNTO 0),
+        DOutB(31 DOWNTO 24) => OCData(15 DOWNTO 8)
     );
     -- 0xFF00  => 0xFFFF = I/O 256B
     io : IOPorts PORT MAP(
@@ -119,7 +96,11 @@ BEGIN
         WriteEnabled => WriteEnabled,
         Address => ioAddress,
         DataIn => DataIn,
-        DataOut => DataOut
+        DataOut => ioDataOut,
+        Port00In => Port00In,
+        Port01In => Port01In,
+        Port02Out => Port02Out,
+        Port03Out => Port03Out
     );
 
 END Rtl;

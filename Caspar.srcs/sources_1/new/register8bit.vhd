@@ -12,12 +12,12 @@ ENTITY Register8Bit IS
 END Register8Bit;
 
 ARCHITECTURE Rtl OF Register8Bit IS
-    SIGNAL data : std_logic_vector(7 DOWNTO 0);
+    SIGNAL data : std_logic_vector(7 DOWNTO 0) := x"00";
 BEGIN
     DataOut <= data WHEN Enabled = '1' AND WriteEnabled = '0' ELSE
         "ZZZZZZZZ";
 
-    PROCESS (Clock)
+    PROCESS (Clock, WriteEnabled)
     BEGIN
         IF rising_edge(Clock) AND Enabled = '1' AND WriteEnabled = '1' THEN
             data <= DataIn;
