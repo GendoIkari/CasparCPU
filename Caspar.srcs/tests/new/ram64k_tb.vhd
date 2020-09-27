@@ -23,7 +23,6 @@ ARCHITECTURE Rtl OF Ram64K_TB IS
     END COMPONENT;
 
     SIGNAL clock : STD_LOGIC := '0';
-    SIGNAL ramClock : STD_LOGIC := '0';
     SIGNAL enA : STD_LOGIC := '0';
     SIGNAL wEA : STD_LOGIC_VECTOR(0 DOWNTO 0) := "0";
     SIGNAL addrA : STD_LOGIC_VECTOR(15 DOWNTO 0) := x"0000";
@@ -35,30 +34,19 @@ ARCHITECTURE Rtl OF Ram64K_TB IS
     SIGNAL dInB : STD_LOGIC_VECTOR(31 DOWNTO 0) := x"00000000";
     SIGNAL dOutB : STD_LOGIC_VECTOR(31 DOWNTO 0);
 BEGIN
-    uut : Ram64K PORT MAP(ramClock, EnA, WEA, AddrA, DInA, DOutA, ramClock, EnB, WEB, AddrB, DInB, DOutB);
+    uut : Ram64K PORT MAP(clock, EnA, WEA, AddrA, DInA, DOutA, clock, EnB, WEB, AddrB, DInB, DOutB);
     clock <= NOT clock AFTER 5 ns;
-
-    PROCESS (clock)
-    BEGIN
-        IF rising_edge(clock) THEN
-            ramClock <= TRANSPORT '1' AFTER 1.5 ns;
-            ramClock <= TRANSPORT '0' AFTER 3.5 ns;
-        END IF;
-        IF falling_edge(clock) THEN
-            ramClock <= TRANSPORT '1' AFTER 1.5 ns;
-            ramClock <= TRANSPORT '0' AFTER 3.5 ns;
-        END IF;
-    END PROCESS;
 
     PROCESS
     BEGIN
-        WAIT UNTIL rising_edge(clock);
+        WAIT UNTIL falling_edge(clock);
         ASSERT dOutA = x"00" SEVERITY failure;
         ASSERT dOutB = x"00000000" SEVERITY failure;
 
         -- Write and Read byte
-        WAIT UNTIL rising_edge(clock);
+        WAIT UNTIL falling_edge(clock);
         enA <= '1';
+        enB <= '0';
         wEA <= "1";
         dInA <= x"A0";
         WAIT UNTIL falling_edge(clock);
@@ -66,42 +54,42 @@ BEGIN
         ASSERT dOutB = x"00000000" SEVERITY failure;
 
         -- Write Multiple Bytes
-        WAIT UNTIL rising_edge(clock);
+        WAIT UNTIL falling_edge(clock);
         addrA <= x"0001";
         dInA <= x"A1";
         WAIT UNTIL falling_edge(clock);
         addrA <= x"0002";
         dInA <= x"A2";
-        WAIT UNTIL rising_edge(clock);
+        WAIT UNTIL falling_edge(clock);
         addrA <= x"0003";
         dInA <= x"A3";
         WAIT UNTIL falling_edge(clock);
 
         -- Read Bytes
-        WAIT UNTIL rising_edge(clock);
+        WAIT UNTIL falling_edge(clock);
         enB <= '1';
         wEA <= "0";
         addrA <= x"0000";
         addrB <= "00000000000000";
-        WAIT UNTIL falling_edge(ramClock);
+        WAIT UNTIL falling_edge(clock);
         ASSERT dOutA = x"A0" SEVERITY failure;
         ASSERT dOutB = x"A3A2A1A0" SEVERITY failure;
 
         WAIT UNTIL falling_edge(clock);
         addrA <= x"0001";
-        WAIT UNTIL falling_edge(ramClock);
+        WAIT UNTIL falling_edge(clock);
         ASSERT dOutA = x"A1" SEVERITY failure;
         ASSERT dOutB = x"A3A2A1A0" SEVERITY failure;
 
-        WAIT UNTIL rising_edge(clock);
+        WAIT UNTIL falling_edge(clock);
         addrA <= x"0002";
-        WAIT UNTIL falling_edge(ramClock);
+        WAIT UNTIL falling_edge(clock);
         ASSERT dOutA = x"A2" SEVERITY failure;
         ASSERT dOutB = x"A3A2A1A0" SEVERITY failure;
 
         WAIT UNTIL falling_edge(clock);
         addrA <= x"0003";
-        WAIT UNTIL falling_edge(ramClock);
+        WAIT UNTIL falling_edge(clock);
         ASSERT dOutA = x"A3" SEVERITY failure;
         ASSERT dOutB = x"A3A2A1A0" SEVERITY failure;
 

@@ -12,14 +12,14 @@ ENTITY Register16Bit IS
 END Register16Bit;
 
 ARCHITECTURE Rtl OF Register16Bit IS
-    SIGNAL data : std_logic_vector(15 DOWNTO 0);
+    SIGNAL data : std_logic_vector(15 DOWNTO 0) := x"0000";
 BEGIN
-    DataOut <= data WHEN Enabled = '1' AND WriteEnabled = '0' ELSE
+    DataOut <= data WHEN Enabled = '1' ELSE
         "ZZZZZZZZZZZZZZZZ";
 
-    PROCESS (Clock)
+    PROCESS (Clock, Enabled, WriteEnabled)
     BEGIN
-        IF rising_edge(Clock) AND Enabled = '1' AND WriteEnabled = '1' THEN
+        IF falling_edge(Clock) AND Enabled = '1' AND WriteEnabled = '1' THEN
             data <= DataIn;
         END IF;
     END PROCESS;

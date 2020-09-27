@@ -7,7 +7,7 @@ ENTITY CustomRom4K IS
         Clock : IN std_logic;
         Enabled : IN std_logic;
         WriteEnabled : IN std_logic; -- ignored
-        Address : IN std_logic_vector(15 DOWNTO 0);
+        Address : IN std_logic_vector(11 DOWNTO 0);
         DataIn : IN std_logic_vector(7 DOWNTO 0);
         DataOut : OUT std_logic_vector(7 DOWNTO 0);
         PC : IN std_logic_vector(15 DOWNTO 0);
@@ -18,9 +18,17 @@ END CustomRom4K;
 
 ARCHITECTURE Rtl OF CustomRom4K IS
     TYPE RomArray IS ARRAY (2 ** 12 - 1 DOWNTO 0) OF std_logic_vector(7 DOWNTO 0);
-    SIGNAL memory : RomArray;
     SIGNAL opCodeDataH : std_logic_vector(7 DOWNTO 0);
     SIGNAL opCodeDataL : std_logic_vector(7 DOWNTO 0);
+    SIGNAL memory : RomArray := (
+    -- MOV A, (0xFF00)
+    0 => x"02", 1 => x"FF", 2 => x"00",
+    -- MOV (0xFF02), A
+    3 => x"03", 4 => x"FF", 5 => x"02",
+    -- JMP 0x0000
+    6 => x"08", 7 => x"00", 8 => x"00",
+    OTHERS => x"00"
+    );
 BEGIN
     DataOut <= memory(to_integer(unsigned(Address))) WHEN Enabled = '1' ELSE
         "ZZZZZZZZ";

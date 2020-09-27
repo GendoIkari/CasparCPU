@@ -17,7 +17,7 @@ BEGIN
     DataOut <= data WHEN Enabled = '1' AND WriteEnabled = '0' ELSE
         "ZZZZZZZZ";
 
-    PROCESS (Clock, WriteEnabled)
+    PROCESS (Clock, Enabled, WriteEnabled)
     BEGIN
         IF rising_edge(Clock) AND Enabled = '1' AND WriteEnabled = '1' THEN
             data <= DataIn;

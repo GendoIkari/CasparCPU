@@ -1,6 +1,7 @@
 memory_initialization_radix=16;
 memory_initialization_vector=
-02, 00, 00, FF, ; MOV A, (0xFF00)
-03, 00, 02, FF, ; MOV (0xFF02), A
-08, 00, 00, 00  ; JMP 0x0000
-;
+02, 00, 00, FF,
+03, 00, 02, FF,
+02, 01, 01, FF,
+03, 10, 03, FF,
+04, 00, 00, 00;
