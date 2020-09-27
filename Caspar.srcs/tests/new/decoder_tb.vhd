@@ -98,7 +98,7 @@ BEGIN
         ASSERT ctrlEnableWriteMemory = '0' SEVERITY failure;
         ASSERT ctrlEnableWriteRegPC = '1' SEVERITY failure;
         ASSERT ctrlEnableAddrFromOpCode = '0' SEVERITY failure;
-        ASSERT ctrlEnableDataFromOpCode = '1' SEVERITY failure;
+        ASSERT ctrlEnableDataFromOpCode = '0' SEVERITY failure;
 
         WAIT;
     END PROCESS;

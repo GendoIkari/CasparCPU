@@ -109,6 +109,5 @@ BEGIN
 
     WITH OpCode SELECT CtrlEnableDataFromOpCode <=
         '1' WHEN MOV_NUM_TO_REG,
-        '1' WHEN JMP_AT_NUM,
         '0' WHEN OTHERS;
 END Rtl;
